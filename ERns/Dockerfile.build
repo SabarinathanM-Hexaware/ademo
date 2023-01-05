@@ -1,0 +1,23 @@
+FROM mcr.microsoft.com/dotnet/aspnet:3.1 AS base
+WORKDIR /app
+EXPOSE 80
+
+FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+WORKDIR /src
+COPY ["Code/ERns.Api/ERns.Api.csproj", "Code/ERns.Api/"]
+COPY ["Code/ERns.Business/ERns.Business.csproj", "Code/ERns.Business/"]
+COPY ["Code/ERns.Data/ERns.Data.csproj", "Code/ERns.Data/"]
+COPY ["Code/ERns.Entities/ERns.Entities.csproj", "Code/ERns.Entities/"]
+COPY ["Code/ERns.Test.Api/ERns.Test.Api.csproj", "Code/ERns.Test.Api/"]
+COPY ["Code/ERns.Test.Business/ERns.Test.Business.csproj", "Code/ERns.Test.Business/"]
+RUN dotnet restore "Code/ERns.Api/ERns.Api.csproj"
+COPY . .
+WORKDIR "/src/Code/ERns.Api"
+RUN dotnet build "ERns.Api.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "ERns.Api.csproj" -c Release -o /app/publish
+
+WORKDIR /src
+RUN dotnet test --results-directory /testresults --logger "trx;LogFileName=testresults.Api.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=/testresults/coverage/ /p:MergeWith=/testresults/coverage/coverage.json "Code/ERns.Test.Api/ERns.Test.Api.csproj"
+RUN dotnet test --results-directory /testresults --logger "trx;LogFileName=testresults.Api.trx" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=/testresults/coverage/ /p:MergeWith=/testresults/coverage/coverage.json "Code/ERns.Test.Business/ERns.Test.Business.csproj"
