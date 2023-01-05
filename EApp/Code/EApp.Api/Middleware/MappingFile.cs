@@ -7,5 +7,6 @@ public class MappingFile : Profile
     public MappingFile()
     {
         // Mapping variables
+		CreateMap<Products , ProductsDto>(); 
     }
 }
